@@ -37,7 +37,7 @@ $$
 $$
   with $\mu_t>0$.
 
-In order to catch the evolution of the viral infection we employ a Dynamic Generalized Linear Model for the Poisson distribution with log-linear link function for the expected counts, $\mu_t$, namely
+In order to catch the evolution of the viral infection we employ a Dynamic Generalized Linear Model (DGLM) for the Poisson distribution with log-linear link function for the expected counts, $\mu_t$, namely
 \begin{eqnarray*}
 Y_t|\mu_t&\sim& \mbox{Poisson}(\mu_t),\qquad t=1,2,\ldots \\
 \log(\mu_t)&=&\alpha_t\\
@@ -89,6 +89,7 @@ In the present version, analyses are carried out at level ***`r confidence`***.
 We use the R package [KFAS](https://cran.r-project.org/web/packages/KFAS/index.html). Model can also be adapted using [R-INLA](http://www.r-inla.org/) package.
 
 Install  packages `dygraphs`,`KFAS` and  `xts` if not available
+
 ```{r echo=TRUE}
 checkpackage <- function(package) {
   if (!package %in% installed.packages()) install.packages(package)
@@ -117,7 +118,7 @@ https://github.com/pcm-dpc/COVID-19/
   
   
   ## Overall estimates
-  ```{r}
+```{r}
 Italy<-read.csv("https://raw.githubusercontent.com/pcm-dpc/COVID-19/master/dati-andamento-nazionale/dpc-covid19-ita-andamento-nazionale.csv")
 ```
 Several outcomes can be potentially monitored, that is
@@ -155,8 +156,7 @@ counts<-xts(c(y,rep(NA,step.ahead)), order.by = c(days,days.ahead), frequency = 
 ## Model fitting 
 
 ```{r}
-model_poisson <- SSModel(counts ~ -1 +
-                           SSMtrend(2,Q=list(matrix(NA,1,1),matrix(NA,1,1))),distribution = "poisson")
+model_poisson <- SSModel(counts ~ -1 +                           SSMtrend(2,Q=list(matrix(NA,1,1),matrix(NA,1,1))),distribution = "poisson")
 fit_poisson <- fitSSM(model_poisson, inits = c(-2,-2), method = "BFGS")
 imp <- importanceSSM(fit_poisson$model, type="signals",filtered=TRUE,nsim = 2000)
 lower<-apply(imp$samples,1,quantile,prob=p.lower)
@@ -233,7 +233,7 @@ days.ahead<-seq(days[length(days)]+1,days[length(days)]+step.ahead,by=1)
 counts<-xts(c(y,rep(NA,step.ahead)), order.by = c(days,days.ahead), frequency = 7)
 ```
 
-and we fit the DGL model
+and we fit the DGLM
 ```{r}
 model_poisson <- SSModel(counts ~ -1 +SSMtrend(2,Q = list(matrix(NA,1,1), matrix(NA,1,1))), distribution = "poisson")
 fit_poisson <- fitSSM(model_poisson, inits = c(-2,-2), method = "BFGS")
@@ -245,7 +245,7 @@ upper<-apply(imp$samples,1,quantile,prob=p.upper)
 
 Plot of   $\mu_{t+s|t}=\exp{\alpha_{t+s|t}}$ 
   
-  ```{r}
+```{r}
 mu.lower<-exp(lower)
 mu.upper<-exp(upper)
 mu.med<-xts(exp(med),order.by = c(days,days.ahead),frequency = 7)
