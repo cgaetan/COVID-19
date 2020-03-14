@@ -127,8 +127,7 @@ Several outcomes can be potentially monitored, that is
 names(Italy[,-(1:2)])
 ```
 
-It is worth noting that some outcomes present negative counts in some regions. It looks like some of these negative counts are redesignations. Outcomes presenting negative values c
-they cannot be analyzed using the proposed model.
+It is worth noting that some outcomes present negative counts in some regions. It looks like some of these negative counts are redesignations. Outcomes presenting negative values cannot be analyzed using the proposed model.
 
 We consider one outcome.
 
