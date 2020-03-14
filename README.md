@@ -4,7 +4,7 @@
 
 COVID-19 epidemic is spreading rapidly in Europe and especially in Italy. 
 
-With the aim to monitoring the evolution of the epidemic, we provide a code for fitting a statistical model based on   [publicly available data](https://github.com/pcm-dpc/COVID-19/).
+With the aim to monitor the evolution of the epidemic, we provide a code for fitting a statistical model based on   [publicly available data](https://github.com/pcm-dpc/COVID-19/).
 
 
 The code is written in  [R Markdown](http://rmarkdown.rstudio.com) in order to make our research reproducible. 
