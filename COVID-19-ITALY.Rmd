@@ -281,7 +281,7 @@ p
 ```
 
 
-## Counties estimates
+## Estimates by county
 
 Download the county figures
 ```{r}
