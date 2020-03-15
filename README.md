@@ -21,3 +21,9 @@ We hope that our contribution will be appreciated and will help analyze data fro
 Monica Chiogna (monica.chiogna2@unibo.it), Department of Statistical Sciences "Paolo Fortunati", University of Bologna, Bologna, Italy  
 
 Carlo Gaetan (gaetan@unive.it), Department of Enviromental Sciences, Informatics and Statistics, Ca' Foscari University of Venice, Venice, Italy
+
+## NEWS
+
+* 2020-03-15 Added county estimates
+* 2020-03-14 Initial release
+
