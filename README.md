@@ -24,6 +24,6 @@ Carlo Gaetan (gaetan@unive.it), Department of Enviromental Sciences, Informatics
 
 ## NEWS
 
-* 2020-03-15 Added county estimates
+* 2020-03-15 Added  estimates by county
 * 2020-03-14 Initial release
 
