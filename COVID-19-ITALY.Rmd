@@ -9,7 +9,11 @@ output:
 pdf_document: 
   toc: yes
 ---
+```{r}
+knitr::opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
+```
   
+
 <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc/4.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/">Creative Commons Attribution-NonCommercial 4.0 International License</a>.
 
 # Disclaimer
@@ -29,14 +33,14 @@ pdf_document:
 
 # The statistical model
 
-Let $Y_t$ the count of cases (for instance total number of infected , new recovered, new hospital admissions) at day $t$.
+Let $Y_t$ the counts (for instance  confirmed cases, deaths) at day $t$.
 
 It is quite common to model these counts with a Poisson distribution 
 
 $$
   Y_t|\mu_t\sim \mbox{Poisson}(\mu_t), \qquad t=1,2,\ldots \\
 $$
-  with $\mu_t>0$.
+The value $\mu_t > 0$ represents the expected number of counts at day $t$. 
 
 In order to catch the evolution of the viral infection we employ a Dynamic Generalized Linear Model (DGLM) for the Poisson distribution with log-linear link function for the expected counts, $\mu_t$, namely
 \begin{eqnarray*}
@@ -108,10 +112,11 @@ library(xts)
 
 # Source of the data 
 
-Download the data from
-
-https://github.com/pcm-dpc/COVID-19/
+We download the (raw) data from https://github.com/pcm-dpc/COVID-19/
   
+```{r}
+repository <- "https://raw.githubusercontent.com/pcm-dpc/COVID-19/master/"
+```
   
   
 # Results
@@ -124,14 +129,32 @@ we set the number of days, $s=`r step.ahead`$, for the ahead prediction. Please 
   
 ## Overall estimates
 
+
 ```{r}
-Italy<-read.csv("https://raw.githubusercontent.com/pcm-dpc/COVID-19/master/dati-andamento-nazionale/dpc-covid19-ita-andamento-nazionale.csv")
+overall.dataset <- "dati-andamento-nazionale/dpc-covid19-ita-andamento-nazionale.csv"
+overall.filename<-paste(repository,overall.dataset,sep="")
+Italy<-read.csv(overall.filename)
 ```
 Several outcomes can be potentially monitored, that is
 
 ```{r}
 names(Italy[,-(1:2)])
 ```
+
+Here is a translation of the meaning.
+
+|Italian    | English  |
+|--|--|
+ricoverati_con_sintomi|Hospitalized with symptoms|
+ terapia_intensiva| Under critical care|          
+ totale_ospedalizzati| Hospitalized patients |
+ isolamento_domiciliare|Under isolation at home|
+ totale_attualmente_positivi| Current cases|
+ nuovi_attualmente_positivi| New cases|
+ dimessi_guariti|Released from the hospitals|
+ deceduti|Deaths|                   
+ totale_casi| Total number of confirmed cases |
+tamponi|Number of swabs|
 
 It is worth noting that some outcomes present negative counts in some regions. It looks like some of these negative counts are redesignations. Outcomes presenting negative values cannot be analyzed using the proposed model.
 
@@ -156,7 +179,8 @@ counts<-xts(c(y,rep(NA,step.ahead)), order.by = c(days,days.ahead), frequency = 
 ## Model fitting 
 
 ```{r}
-model_poisson <- SSModel(counts ~ -1 + SSMtrend(2,Q=list(matrix(NA,1,1),matrix(NA,1,1))),distribution = "poisson")
+model_poisson <- SSModel(counts ~ -1 + SSMtrend(2,Q=list(matrix(NA,1,1),matrix(NA,1,1))),
+                         distribution = "poisson")
 fit_poisson <- fitSSM(model_poisson, inits = c(-2,-2), method = "BFGS")
 imp <- importanceSSM(fit_poisson$model, type="signals",filtered=TRUE,nsim = 2000)
 lower<-apply(imp$samples,1,quantile,prob=p.lower)
@@ -177,8 +201,11 @@ mu.med<-xts(exp(med),order.by = c(days,days.ahead),frequency = 7)
 counts[days.ahead]<-mu.med[days.ahead]
 mu<-xts(x = as.matrix(cbind(counts,mu.lower,mu.upper)) , order.by = c(days,days.ahead))
 p <- dygraph(mu,main=paste("Italy: prediction (confidence ",100*confidence,"%)",sep = ""),
-             xlab="Day",height=400,width=800) %>%  dySeries(c("mu.lower", "counts", "mu.upper"),label="counts")
-p<-p %>% dyLegend(show = "always", hideOnMouseOut = FALSE) %>%  dyShading(from = days.ahead[1], to = days.ahead[step.ahead], color = "#CCEBD6")%>% dyEvent(days.ahead[1], "Prediction", labelLoc = "bottom")
+             xlab="Day",height=400,width=800) 
+p<-p %>%  dySeries(c("mu.lower", "counts","mu.upper"),label="counts")
+p<-p %>% dyLegend(show = "always", hideOnMouseOut = FALSE) 
+p<-p %>%dyShading(from = days.ahead[1], to = days.ahead[step.ahead], color = "#CCEBD6")
+p<-p %>% dyEvent(days.ahead[1], "Prediction", labelLoc = "bottom")
 p
 ```
 
@@ -189,8 +216,11 @@ Plot of  $\alpha_{t|t-1}$,  i.e the signal
 ```{r}
 signal<-xts(cbind(lower,med,upper), order.by = c(days,days.ahead), frequency = 7)
 p <- dygraph(signal,main=paste("Italy: signal (confidence ",100*confidence,"%)",sep = ""),
-             xlab="Day",height=400,width=800) %>%  dySeries(c("lower", "med", "upper"))%>% dyLegend(show = "always", hideOnMouseOut = FALSE) 
-p<-p  %>% dyShading(from = days.ahead[1], to = days.ahead[step.ahead], color = "#CCEBD6")%>% dyEvent(days.ahead[1], "Prediction", labelLoc = "bottom")
+             xlab="Day",height=400,width=800) 
+p <- p %>%  dySeries(c("lower", "med", "upper"))
+p <- p %>% dyLegend(show = "always", hideOnMouseOut = FALSE) 
+p <- p  %>% dyShading(from = days.ahead[1], to = days.ahead[step.ahead], color = "#CCEBD6")
+p <- p %>% dyEvent(days.ahead[1], "Prediction", labelLoc = "bottom")
 p
 ```
 
@@ -203,7 +233,8 @@ med<-apply(imp$samples[,2,],1,quantile,prob=0.500)
 upper<-apply(imp$samples[,2,],1,quantile,prob=p.upper)
 slope<-xts(cbind(lower,med,upper), order.by = c(days,days.ahead), frequency = 7)
 p <- dygraph(slope,main=paste("Italy: slope (confidence ",100*confidence,"%)",sep = ""),xlab="Day",height=400,width=800) %>% dySeries(c("lower", "med", "upper"),label="median")%>% dyLegend(show = "always", hideOnMouseOut = FALSE)
-p<- p %>% dyShading(from = days.ahead[1], to = days.ahead[step.ahead], color = "#CCEBD6")%>% dyEvent(days.ahead[1], "Prediction", labelLoc = "bottom")
+p <- p %>% dyShading(from = days.ahead[1], to = days.ahead[step.ahead], color = "#CCEBD6")
+p <- p%>% dyEvent(days.ahead[1], "Prediction", labelLoc = "bottom")
 p
 ```
 
@@ -212,8 +243,11 @@ p
 
 Download the regional figures
 ```{r}
-regions<-read.csv("https://raw.githubusercontent.com/pcm-dpc/COVID-19/master/dati-regioni/dpc-covid19-ita-regioni.csv")
+regional.dataset <- "dati-regioni/dpc-covid19-ita-regioni.csv"
+regional.filename<-paste(repository,regional.dataset,sep="")
+regions<-read.csv(regional.filename)
 ```
+
 
 
 
@@ -227,11 +261,11 @@ myregion<-"Veneto" # Obviously...
 In our case `r myregion`
 
 ```{r}
-y<-as.numeric(unlist(subset(regions,subset = (denominazione_regione == myregion),select = select)))
-myDateTimeStr1 <-regions$data[regions$denominazione_regione==myregion]
+y <- as.numeric(unlist(subset(regions,subset = (denominazione_regione == myregion),select = select)))
+myDateTimeStr1 <- regions$data[regions$denominazione_regione==myregion]
 myPOSIXct1 <- as.POSIXct(myDateTimeStr1, format="%Y-%m-%d %H:%M:%S")
-days<-as.Date(myPOSIXct1)
-days.ahead<-seq(days[length(days)]+1,days[length(days)]+step.ahead,by=1)
+days <- as.Date(myPOSIXct1)
+days.ahead <- seq(days[length(days)]+1,days[length(days)]+step.ahead,by=1)
 counts<-xts(c(y,rep(NA,step.ahead)), order.by = c(days,days.ahead), frequency = 7)
 ```
 
@@ -253,8 +287,10 @@ mu.upper<-exp(upper)
 mu.med<-xts(exp(med),order.by = c(days,days.ahead),frequency = 7)
 counts[days.ahead]<-mu.med[days.ahead]
 mu<-xts(x = as.matrix(cbind(counts,mu.lower,mu.upper)) , order.by = c(days,days.ahead))
-p <- dygraph(mu,main=paste(myregion,": prediction (confidence ",100*confidence,"%)",sep = ""),xlab="Day",height=400,width=800) %>%  dySeries(c("mu.lower", "counts", "mu.upper"),label="counts")
-p<-p %>% dyLegend(show = "always", hideOnMouseOut = FALSE) %>%  dyShading(from = days.ahead[1], to = days.ahead[step.ahead], color = "#CCEBD6")%>% dyEvent(days.ahead[1], "Prediction", labelLoc = "bottom")
+p <- dygraph(mu,main=paste(myregion,": prediction (confidence ",100*confidence,"%)",sep = ""),xlab="Day",height=400,width=800) 
+p <- p %>%  dySeries(c("mu.lower", "counts", "mu.upper"),label="counts")
+p <- p %>% dyLegend(show = "always", hideOnMouseOut = FALSE) 
+p <- p %>%  dyShading(from = days.ahead[1], to = days.ahead[step.ahead], color = "#CCEBD6")%>% dyEvent(days.ahead[1], "Prediction", labelLoc = "bottom")
 p
 ```
 
@@ -265,7 +301,8 @@ Plot of  $\alpha_{t|t-1}$,  i.e the signal
 ```{r}
 signal<-xts(cbind(lower,med,upper), order.by = c(days,days.ahead), frequency = 7)
 p <- dygraph(signal,main=paste(myregion,": signal (confidence ",100*confidence,"%)",sep = ""),xlab="Day",height=400,width=800) %>%  dySeries(c("lower", "med", "upper"))%>% dyLegend(show = "always", hideOnMouseOut = FALSE) 
-p<-p  %>% dyShading(from = days.ahead[1], to = days.ahead[step.ahead], color = "#CCEBD6")%>% dyEvent(days.ahead[1], "Prediction", labelLoc = "bottom")
+p <- p %>% dyShading(from = days.ahead[1], to = days.ahead[step.ahead], color = "#CCEBD6")
+p <- p %>% dyEvent(days.ahead[1], "Prediction", labelLoc = "bottom")
 p
 ```
 
@@ -277,8 +314,11 @@ lower<-apply(imp$samples[,2,],1,quantile,prob=p.lower)
 med<-apply(imp$samples[,2,],1,quantile,prob=0.500)
 upper<-apply(imp$samples[,2,],1,quantile,prob=p.upper)
 slope<-xts(cbind(lower,med,upper), order.by = c(days,days.ahead), frequency = 7)
-p <- dygraph(slope,main=paste(myregion,": slope (confidence ",100*confidence,"%)",sep = ""),xlab="Day",height=400,width=800) %>% dySeries(c("lower", "med", "upper"),label="median")%>% dyLegend(show = "always", hideOnMouseOut = FALSE)
-p<- p %>% dyShading(from = days.ahead[1], to = days.ahead[step.ahead], color = "#CCEBD6")%>% dyEvent(days.ahead[1], "Prediction", labelLoc = "bottom")
+p <- dygraph(slope,main=paste(myregion,": slope (confidence ",100*confidence,"%)",sep = ""),xlab="Day",height=400,width=800) 
+p <- p %>% dySeries(c("lower", "med", "upper"),label="median")
+p <- p %>% dyLegend(show = "always", hideOnMouseOut = FALSE)
+p <- p %>% dyShading(from = days.ahead[1], to = days.ahead[step.ahead], color = "#CCEBD6")
+p <- p %>% dyEvent(days.ahead[1], "Prediction", labelLoc = "bottom")
 p
 ```
 
@@ -287,7 +327,9 @@ p
 
 Download the county figures
 ```{r}
-counties<-read.csv("https://raw.githubusercontent.com/pcm-dpc/COVID-19/master/dati-province/dpc-covid19-ita-province.csv")
+county.dataset <- "dati-province/dpc-covid19-ita-province.csv"
+county.filename<-paste(repository,county.dataset,sep="")
+counties<-read.csv(county.filename)
 ```
 
 
@@ -313,7 +355,8 @@ counts<-xts(c(y,rep(NA,step.ahead)), order.by = c(days,days.ahead), frequency = 
 
 and we fit the DGLM
 ```{r}
-model_poisson <- SSModel(counts ~ -1 +SSMtrend(2,Q = list(matrix(NA,1,1), matrix(NA,1,1))), distribution = "poisson")
+model_poisson <- SSModel(counts ~ -1 +SSMtrend(2,Q = list(matrix(NA,1,1), matrix(NA,1,1))), 
+distribution = "poisson")
 fit_poisson <- fitSSM(model_poisson, inits = c(0,0), method = "BFGS")
 imp <- importanceSSM(fit_poisson$model, type="signals",filtered=TRUE,nsim = 2000)
 lower<-apply(imp$samples,1,quantile,prob=p.lower)
@@ -329,8 +372,10 @@ mu.upper<-exp(upper)
 mu.med<-xts(exp(med),order.by = c(days,days.ahead),frequency = 7)
 counts[days.ahead]<-mu.med[days.ahead]
 mu<-xts(x = as.matrix(cbind(counts,mu.lower,mu.upper)) , order.by = c(days,days.ahead))
-p <- dygraph(mu,main=paste(mycounty,": total case prediction (confidence ",100*confidence,"%)",sep = ""),xlab="Day",height=400,width=800) %>%  dySeries(c("mu.lower", "counts", "mu.upper"),label="counts")
-p<-p %>% dyLegend(show = "always", hideOnMouseOut = FALSE) %>%  dyShading(from = days.ahead[1], to = days.ahead[step.ahead], color = "#CCEBD6")%>% dyEvent(days.ahead[1], "Prediction", labelLoc = "bottom")
+p <- dygraph(mu,main=paste(mycounty,": total case prediction (confidence ",100*confidence,"%)",sep = ""),xlab="Day",height=400,width=800) 
+p <- p %>%  dySeries(c("mu.lower", "counts", "mu.upper"),label="counts")
+p <- p %>% dyLegend(show = "always", hideOnMouseOut = FALSE) %>%  dyShading(from = days.ahead[1], to = days.ahead[step.ahead], color = "#CCEBD6")
+p <-p %>% dyEvent(days.ahead[1], "Prediction", labelLoc = "bottom")
 p
 ```
 
@@ -340,7 +385,8 @@ y<-as.numeric(unlist(subset(counties,subset =(denominazione_provincia == mycount
 y<-diff(y)
 days<-days[-1]
 counts<-xts(c(y,rep(NA,step.ahead)), order.by = c(days,days.ahead), frequency = 7)
-model_poisson <- SSModel(counts ~ -1 +SSMtrend(2,Q = list(matrix(NA,1,1), matrix(NA,1,1))), distribution = "poisson")
+model_poisson <- SSModel(counts ~ -1 +SSMtrend(2,Q = list(matrix(NA,1,1), matrix(NA,1,1))), 
+distribution = "poisson")
 fit_poisson <- fitSSM(model_poisson, inits = c(0,0), method = "BFGS")
 imp <- importanceSSM(fit_poisson$model, type="signals",filtered=TRUE,nsim = 2000)
 lower<-apply(imp$samples,1,quantile,prob=p.lower)
@@ -351,8 +397,11 @@ mu.upper<-exp(upper)
 mu.med<-xts(exp(med),order.by =c(days,days.ahead),frequency = 7)
 counts[days.ahead]<-mu.med[days.ahead]
 mu<-xts(x = as.matrix(cbind(counts,mu.lower,mu.upper)) , order.by = c(days,days.ahead))
-p <- dygraph(mu,main=paste(mycounty,": new case prediction (confidence ",100*confidence,"%)",sep = ""),xlab="Day",height=400,width=800) %>%  dySeries(c("mu.lower", "counts", "mu.upper"),label="counts")
-p<-p %>% dyLegend(show = "always", hideOnMouseOut = FALSE) %>%  dyShading(from = days.ahead[1], to = days.ahead[step.ahead], color = "#CCEBD6")%>% dyEvent(days.ahead[1], "Prediction", labelLoc = "bottom")
+p <- dygraph(mu,main=paste(mycounty,": new case prediction (confidence ",100*confidence,"%)",sep = ""),xlab="Day",height=400,width=800) 
+p <- p %>%  dySeries(c("mu.lower", "counts", "mu.upper"),label="counts")
+p <- p %>% dyLegend(show = "always", hideOnMouseOut = FALSE)
+p <- p %>%  dyShading(from = days.ahead[1], to = days.ahead[step.ahead], color = "#CCEBD6")
+p <- p %>% dyEvent(days.ahead[1], "Prediction", labelLoc = "bottom")
 p
 ```
 
@@ -362,7 +411,8 @@ Plot of  $\alpha_{t|t-1}$,  i.e the signal
 ```{r}
 signal<-xts(cbind(lower,med,upper), order.by = c(days,days.ahead), frequency = 7)
 p <- dygraph(signal,main=paste(mycounty,": new case signal (confidence ",100*confidence,"%)",sep = ""),xlab="Day",height=400,width=800) %>%  dySeries(c("lower", "med", "upper"))%>% dyLegend(show = "always", hideOnMouseOut = FALSE) 
-p<-p  %>% dyShading(from = days.ahead[1], to = days.ahead[step.ahead], color = "#CCEBD6")%>% dyEvent(days.ahead[1], "Prediction", labelLoc = "bottom")
+p <- p  %>% dyShading(from = days.ahead[1], to = days.ahead[step.ahead], color = "#CCEBD6")
+p <- p %>% dyEvent(days.ahead[1], "Prediction", labelLoc = "bottom")
 p
 ```
 
@@ -374,7 +424,10 @@ lower<-apply(imp$samples[,2,],1,quantile,prob=p.lower)
 med<-apply(imp$samples[,2,],1,quantile,prob=0.500)
 upper<-apply(imp$samples[,2,],1,quantile,prob=p.upper)
 slope<-xts(cbind(lower,med,upper), order.by = c(days,days.ahead), frequency = 7)
-p <- dygraph(slope,main=paste(mycounty,": new case slope (confidence ",100*confidence,"%)",sep = ""),xlab="Day",height=400,width=800) %>% dySeries(c("lower", "med", "upper"),label="median")%>% dyLegend(show = "always", hideOnMouseOut = FALSE)
-p<- p %>% dyShading(from = days.ahead[1], to = days.ahead[step.ahead], color = "#CCEBD6")%>% dyEvent(days.ahead[1], "Prediction", labelLoc = "bottom")
+p <- dygraph(slope,main=paste(mycounty,": new case slope (confidence ",100*confidence,"%)",sep = ""),xlab="Day",height=400,width=800) 
+p <- p %>% dySeries(c("lower", "med", "upper"),label="median")
+p <- p %>% dyLegend(show = "always", hideOnMouseOut = FALSE)
+p <- p %>% dyShading(from = days.ahead[1], to = days.ahead[step.ahead], color = "#CCEBD6")
+p <- p %>% dyEvent(days.ahead[1], "Prediction", labelLoc = "bottom")
 p
 ```
