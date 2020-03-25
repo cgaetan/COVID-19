@@ -24,6 +24,7 @@ Carlo Gaetan (gaetan@unive.it), Department of Enviromental Sciences, Informatics
 
 ## NEWS
 
+* 2020-03-25 Fixed an inconsistency due to a change in the date format
 * 2020-03-19 Improved the layout and added a legend. 
 * 2020-03-18 Added  estimates of new cases by county
 * 2020-03-15 Added  estimates by county
