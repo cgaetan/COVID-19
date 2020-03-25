@@ -16,6 +16,8 @@ knitr::opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
 
 <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc/4.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/">Creative Commons Attribution-NonCommercial 4.0 International License</a>.
 
+* Link at the [R markdown code](https://github.com/cgaetan/COVID-19) for reproducing this document.
+
 # Disclaimer
 
 * We want to investigate the evolution of the coronavirus pandemic in Italy from a statistical perspective using aggregated data.
@@ -33,9 +35,7 @@ knitr::opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
 
 # The statistical model
 
-Let $Y_t$ the counts (for instance  confirmed cases, deaths) at day $t$.
-
-It is quite common to model these counts with a Poisson distribution 
+Let $Y_t$ the counts (for instance  confirmed cases, deaths) at day $t$. It is quite common to model these counts with a Poisson distribution 
 
 $$
   Y_t|\mu_t\sim \mbox{Poisson}(\mu_t), \qquad t=1,2,\ldots \\
@@ -169,7 +169,7 @@ We extract the timeseries.
 
 ```{r}
 myDateTimeStr1 <- Italy$data
-myPOSIXct1 <- as.POSIXct(myDateTimeStr1, format="%Y-%m-%d %H:%M:%S")
+myPOSIXct1 <- as.POSIXct(myDateTimeStr1, format="%Y-%m-%dT %H:%M:%S")
 days<-as.Date(myPOSIXct1)
 days.ahead<-seq(days[length(days)]+1,days[length(days)]+step.ahead,by=1)
 counts<-xts(c(y,rep(NA,step.ahead)), order.by = c(days,days.ahead), frequency = 7)
@@ -262,8 +262,8 @@ In our case `r myregion`
 
 ```{r}
 y <- as.numeric(unlist(subset(regions,subset = (denominazione_regione == myregion),select = select)))
-myDateTimeStr1 <- regions$data[regions$denominazione_regione==myregion]
-myPOSIXct1 <- as.POSIXct(myDateTimeStr1, format="%Y-%m-%d %H:%M:%S")
+myDateTimeStr1 <-regions$data[regions$denominazione_regione==myregion]
+myPOSIXct1 <- as.POSIXct(myDateTimeStr1, format="%Y-%m-%dT %H:%M:%S")
 days <- as.Date(myPOSIXct1)
 days.ahead <- seq(days[length(days)]+1,days[length(days)]+step.ahead,by=1)
 counts<-xts(c(y,rep(NA,step.ahead)), order.by = c(days,days.ahead), frequency = 7)
@@ -346,8 +346,10 @@ In our case `r mycounty`
 ```{r}
 select<-"totale_casi"
 y<-as.numeric(unlist(subset(counties,subset =(denominazione_provincia == mycounty),select = select)))
-myDateTimeStr1 <-regions$data[regions$denominazione_regione==myregion]
-myPOSIXct1 <- as.POSIXct(myDateTimeStr1, format="%Y-%m-%d %H:%M:%S")
+ind<-1:length(y)
+
+myDateTimeStr1 <-counties$data[counties$denominazione_provincia==mycounty]
+myPOSIXct1 <- as.POSIXct(myDateTimeStr1, format="%Y-%m-%dT %H:%M:%S")
 days<-as.Date(myPOSIXct1)
 days.ahead<-seq(days[length(days)]+1,days[length(days)]+step.ahead,by=1)
 counts<-xts(c(y,rep(NA,step.ahead)), order.by = c(days,days.ahead), frequency = 7)
@@ -382,6 +384,9 @@ p
 
 ```{r}
 y<-as.numeric(unlist(subset(counties,subset =(denominazione_provincia == mycounty),select = select)))
+myDateTimeStr1 <-counties$data[counties$denominazione_provincia==mycounty]
+myPOSIXct1 <- as.POSIXct(myDateTimeStr1, format="%Y-%m-%dT %H:%M:%S")
+days<-as.Date(myPOSIXct1)
 y<-diff(y)
 days<-days[-1]
 counts<-xts(c(y,rep(NA,step.ahead)), order.by = c(days,days.ahead), frequency = 7)
