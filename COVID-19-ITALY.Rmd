@@ -149,8 +149,8 @@ ricoverati_con_sintomi|Hospitalized with symptoms|
  terapia_intensiva| Under critical care|          
  totale_ospedalizzati| Hospitalized patients |
  isolamento_domiciliare|Under isolation at home|
- totale_attualmente_positivi| Current cases|
- nuovi_attualmente_positivi| New cases|
+ totale_positivi| Current cases|
+ nuovi_positivi| New cases|
  dimessi_guariti|Released from the hospitals|
  deceduti|Deaths|                   
  totale_casi| Total number of confirmed cases |
@@ -158,10 +158,11 @@ tamponi|Number of swabs|
 
 It is worth noting that some outcomes present negative counts in some regions. It looks like some of these negative counts are redesignations. Outcomes presenting negative values cannot be analyzed using the proposed model.
 
+
 We consider one outcome.
 
 ```{r}
-select<-"nuovi_attualmente_positivi"
+select<-"nuovi_positivi"
 y<-as.numeric(unlist(subset(Italy,select = select)))          
 ```
 
@@ -178,11 +179,17 @@ counts<-xts(c(y,rep(NA,step.ahead)), order.by = c(days,days.ahead), frequency = 
 
 ## Model fitting 
 
+We set the number independent samples for the importance sampling algorithm
+```{r}
+nsim<-1000
+```
+
+
 ```{r}
 model_poisson <- SSModel(counts ~ -1 + SSMtrend(2,Q=list(matrix(NA,1,1),matrix(NA,1,1))),
                          distribution = "poisson")
 fit_poisson <- fitSSM(model_poisson, inits = c(-2,-2), method = "BFGS")
-imp <- importanceSSM(fit_poisson$model, type="signals",filtered=TRUE,nsim = 2000)
+imp <- importanceSSM(fit_poisson$model, type="signals",filtered=TRUE,nsim = nsim)
 lower<-apply(imp$samples,1,quantile,prob=p.lower)
 med<-apply(imp$samples,1,median)
 upper<-apply(imp$samples,1,quantile,prob=p.upper)
@@ -227,7 +234,7 @@ p
 Plot of the  $\beta_{t|t-1}$,  i.e the estimated slope
 
 ```{r}
-imp <- importanceSSM(fit_poisson$model, type="states",filtered=TRUE,nsim = 2000)
+imp <- importanceSSM(fit_poisson$model, type="states",filtered=TRUE,nsim = nsim)
 lower<-apply(imp$samples[,2,],1,quantile,prob=p.lower)
 med<-apply(imp$samples[,2,],1,quantile,prob=0.500)
 upper<-apply(imp$samples[,2,],1,quantile,prob=p.upper)
@@ -258,7 +265,11 @@ We select one region
 myregion<-"Veneto" # Obviously...
 ```
 
-In our case `r myregion`
+In our case `r myregion` and we consider one outcome.
+
+```{r}
+select<-"nuovi_positivi"
+```
 
 ```{r}
 y <- as.numeric(unlist(subset(regions,subset = (denominazione_regione == myregion),select = select)))
@@ -273,7 +284,7 @@ and we fit the DGLM
 ```{r}
 model_poisson <- SSModel(counts ~ -1 +SSMtrend(2,Q = list(matrix(NA,1,1), matrix(NA,1,1))), distribution = "poisson")
 fit_poisson <- fitSSM(model_poisson, inits = c(-2,-2), method = "BFGS")
-imp <- importanceSSM(fit_poisson$model, type="signals",filtered=TRUE,nsim = 2000)
+imp <- importanceSSM(fit_poisson$model, type="signals",filtered=TRUE,nsim = nsim)
 lower<-apply(imp$samples,1,quantile,prob=p.lower)
 med<-apply(imp$samples,1,median)
 upper<-apply(imp$samples,1,quantile,prob=p.upper)
@@ -309,7 +320,7 @@ p
 Plot of the  $\beta_{t|t-1}$,  i.e the estimated slope
 
 ```{r}
-imp <- importanceSSM(fit_poisson$model, type="states",filtered=TRUE,nsim = 2000)
+imp <- importanceSSM(fit_poisson$model, type="states",filtered=TRUE,nsim = nsim)
 lower<-apply(imp$samples[,2,],1,quantile,prob=p.lower)
 med<-apply(imp$samples[,2,],1,quantile,prob=0.500)
 upper<-apply(imp$samples[,2,],1,quantile,prob=p.upper)
@@ -360,7 +371,7 @@ and we fit the DGLM
 model_poisson <- SSModel(counts ~ -1 +SSMtrend(2,Q = list(matrix(NA,1,1), matrix(NA,1,1))), 
 distribution = "poisson")
 fit_poisson <- fitSSM(model_poisson, inits = c(0,0), method = "BFGS")
-imp <- importanceSSM(fit_poisson$model, type="signals",filtered=TRUE,nsim = 2000)
+imp <- importanceSSM(fit_poisson$model, type="signals",filtered=TRUE,nsim = nsim)
 lower<-apply(imp$samples,1,quantile,prob=p.lower)
 med<-apply(imp$samples,1,median)
 upper<-apply(imp$samples,1,quantile,prob=p.upper)
@@ -393,7 +404,7 @@ counts<-xts(c(y,rep(NA,step.ahead)), order.by = c(days,days.ahead), frequency = 
 model_poisson <- SSModel(counts ~ -1 +SSMtrend(2,Q = list(matrix(NA,1,1), matrix(NA,1,1))), 
 distribution = "poisson")
 fit_poisson <- fitSSM(model_poisson, inits = c(0,0), method = "BFGS")
-imp <- importanceSSM(fit_poisson$model, type="signals",filtered=TRUE,nsim = 2000)
+imp <- importanceSSM(fit_poisson$model, type="signals",filtered=TRUE,nsim = nsim)
 lower<-apply(imp$samples,1,quantile,prob=p.lower)
 med<-apply(imp$samples,1,median)
 upper<-apply(imp$samples,1,quantile,prob=p.upper)
@@ -424,7 +435,7 @@ p
 Plot of the  $\beta_{t|t-1}$,  i.e the estimated slope
 
 ```{r}
-imp <- importanceSSM(fit_poisson$model, type="states",filtered=TRUE,nsim = 2000)
+imp <- importanceSSM(fit_poisson$model, type="states",filtered=TRUE,nsim =nsim)
 lower<-apply(imp$samples[,2,],1,quantile,prob=p.lower)
 med<-apply(imp$samples[,2,],1,quantile,prob=0.500)
 upper<-apply(imp$samples[,2,],1,quantile,prob=p.upper)
